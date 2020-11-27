@@ -1,0 +1,43 @@
+clear;clc;
+L_cs = 0.0375;  % side length of the chip
+h_air = 1236;   % convection coefficient of air, determined using Martin's correlation for Nusselt number.
+k_al = 239;     % conduction coefficient for aluminum
+b_th = 0.1;     % thickness of the base
+tp_th = 0.000100;   % thickness of the thermal paste
+k_tp = 8.9;     % thermal conductivity coefficient of the thermal paste
+T_inf = 25 +273;    % temp of air at a distance from the surface of heatsink, in K
+q_c = 95;   % total heat generation by chip that must be transferred away
+
+% variables that can be set and altered
+N_rows = 10;    % Number of rows desired
+w_ch = 0.0010;       % Desired width of a single channel
+ht_f = 0.050;        % Desired height (distance from base) of a single fin
+
+N_cols = N_rows;    % Number of columns will = N_rows for a square array of pins
+N_f = N_rows * N_cols;  % total number of pins
+N_ch = N_rows - 1;   % total number of channels
+A_chip =  L_cs^2;       % Surface area of chip
+t_f = (L_cs - N_ch * w_ch);     % Thickness of a single pin 
+Acs_f = t_f^2;      % Cross-sectional area of a single fin
+Acs_f_all = Acs_f * N_f;    % Total sum of cross-sectional areas of all fins
+A_b = A_chip - Acs_f_all;
+Asa_f = 4 * ((ht_f * t_f) + t_f^2);     % Total surface area exposed on a single fin
+Asa_t = N_f * Asa_f + A_b;      % Total area in consideration; should be = to the surface area of the base
+
+m = sqrt(2 * h_air/(k_al * t_f));       % Convenience parameter for fin calculations
+Lc = ht_f + t_f/2;      % Characteristic length, equation given Table 3.5, for Straight Rectangular Fin
+A_f = 2 * t_f * Lc;
+A_p = Lc * t_f;
+m_Lc =Lc^3/2 * (h_air/(k_al * A_p)^(1/2))
+
+eta_f = tanh(m_Lc) / (m_Lc)     % efficiency of a single fin
+eta_o = 1-(N_f * A_f/Asa_t)*(1 - eta_f)     % efficiency of total fin array
+
+R_farray = 1/(eta_o * h_air * Asa_t);   % overall thermal resistance of fin array
+R_tp = tp_th/(k_tp * A_chip);   % thermal resistance of thermal paste
+R_b = b_th/(k_al * A_chip);     % thermal resistance of conduction through base
+
+T_chip = q_c*(R_tp + R_b + R_farray) + T_inf -273   % temperature at the chip surface in deg C
+if t_f <=0
+    disp('Invalid results, fin thickness <= 0')
+end
